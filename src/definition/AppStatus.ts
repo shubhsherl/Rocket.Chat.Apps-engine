@@ -51,13 +51,6 @@ export class AppStatusUtilsDef {
                 return false;
         }
     }
-
-    public isError(status: AppStatus): boolean {
-        return [
-            AppStatus.ERROR_DISABLED,
-            AppStatus.COMPILER_ERROR_DISABLED,
-        ].includes(status);
-    }
 }
 
 export const AppStatusUtils = new AppStatusUtilsDef();

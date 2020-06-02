@@ -222,11 +222,9 @@ export class AppManager {
 
         // Now let's enable the apps which were once enabled
         // but are not currently disabled.
-        for (const app of this.apps.values()) {
-            if (!AppStatusUtils.isDisabled(app.getStatus()) && AppStatusUtils.isEnabled(app.getPreviousStatus())) {
-                await this.enableApp(items.get(app.getID()), app, true, app.getPreviousStatus() === AppStatus.MANUALLY_ENABLED).catch(console.error);
-            } else if (!AppStatusUtils.isError(app.getStatus())) {
-                this.listenerManager.lockEssentialEvents(app);
+        for (const rl of this.apps.values()) {
+            if (!AppStatusUtils.isDisabled(rl.getStatus()) && AppStatusUtils.isEnabled(rl.getPreviousStatus())) {
+                await this.enableApp(items.get(rl.getID()), rl, true, rl.getPreviousStatus() === AppStatus.MANUALLY_ENABLED).catch(console.error);
             }
         }
 
@@ -241,18 +239,21 @@ export class AppManager {
             return;
         }
 
-        for (const app of this.apps.values()) {
-            if (app.getStatus() === AppStatus.INITIALIZED) {
-                this.listenerManager.unregisterListeners(app);
-                this.commandManager.unregisterCommands(app.getID());
-                this.externalComponentManager.unregisterExternalComponents(app.getID());
-                this.apiManager.unregisterApis(app.getID());
-                this.accessorManager.purifyApp(app.getID());
-            } else if (!AppStatusUtils.isDisabled(app.getStatus())) {
-                await this.disable(app.getID(), isManual ? AppStatus.MANUALLY_DISABLED : AppStatus.DISABLED);
+        for (const rl of this.apps.values()) {
+            if (AppStatusUtils.isDisabled(rl.getStatus())) {
+                continue;
             }
 
-            this.listenerManager.releaseEssentialEvents(app);
+            if (rl.getStatus() === AppStatus.INITIALIZED) {
+                this.listenerManager.unregisterListeners(rl);
+                this.commandManager.unregisterCommands(rl.getID());
+                this.externalComponentManager.unregisterExternalComponents(rl.getID());
+                this.apiManager.unregisterApis(rl.getID());
+                this.accessorManager.purifyApp(rl.getID());
+                continue;
+            }
+
+            await this.disable(rl.getID(), isManual ? AppStatus.MANUALLY_DISABLED : AppStatus.DISABLED);
         }
 
         // Remove all the apps from the system now that we have unloaded everything
@@ -349,34 +350,33 @@ export class AppManager {
             throw new Error('Invalid disabled status');
         }
 
-        const app = this.apps.get(id);
+        const rl = this.apps.get(id);
 
-        if (!app) {
+        if (!rl) {
             throw new Error(`No App by the id "${id}" exists.`);
         }
 
-        if (AppStatusUtils.isEnabled(app.getStatus())) {
-            await app.call(AppMethod.ONDISABLE, this.accessorManager.getConfigurationModify(app.getID()))
+        if (AppStatusUtils.isEnabled(rl.getStatus())) {
+            await rl.call(AppMethod.ONDISABLE, this.accessorManager.getConfigurationModify(rl.getID()))
                 .catch((e) => console.warn('Error while disabling:', e));
         }
 
-        this.listenerManager.unregisterListeners(app);
-        this.listenerManager.lockEssentialEvents(app);
-        this.commandManager.unregisterCommands(app.getID());
-        this.externalComponentManager.unregisterExternalComponents(app.getID());
-        this.apiManager.unregisterApis(app.getID());
-        this.accessorManager.purifyApp(app.getID());
+        this.listenerManager.unregisterListeners(rl);
+        this.commandManager.unregisterCommands(rl.getID());
+        this.externalComponentManager.unregisterExternalComponents(rl.getID());
+        this.apiManager.unregisterApis(rl.getID());
+        this.accessorManager.purifyApp(rl.getID());
 
-        await app.setStatus(status, silent);
+        await rl.setStatus(status, silent);
 
         const storageItem = await this.storage.retrieveOne(id);
 
-        app.getStorageItem().marketplaceInfo = storageItem.marketplaceInfo;
-        await app.validateLicense().catch();
+        rl.getStorageItem().marketplaceInfo = storageItem.marketplaceInfo;
+        await rl.validateLicense().catch();
 
         // This is async, but we don't care since it only updates in the database
         // and it should not mutate any properties we care about
-        storageItem.status = app.getStatus();
+        storageItem.status = rl.getStatus();
         await this.storage.update(storageItem).catch();
 
         return true;
@@ -462,7 +462,6 @@ export class AppManager {
         }
 
         this.listenerManager.unregisterListeners(app);
-        this.listenerManager.releaseEssentialEvents(app);
         this.commandManager.unregisterCommands(app.getID());
         this.externalComponentManager.purgeExternalComponents(app.getID());
         this.apiManager.unregisterApis(app.getID());
@@ -797,12 +796,10 @@ export class AppManager {
             this.externalComponentManager.registerExternalComponents(app.getID());
             this.apiManager.registerApis(app.getID());
             this.listenerManager.registerListeners(app);
-            this.listenerManager.releaseEssentialEvents(app);
         } else {
             this.commandManager.unregisterCommands(app.getID());
             this.externalComponentManager.unregisterExternalComponents(app.getID());
             this.apiManager.unregisterApis(app.getID());
-            this.listenerManager.lockEssentialEvents(app);
         }
 
         if (saveToDb) {

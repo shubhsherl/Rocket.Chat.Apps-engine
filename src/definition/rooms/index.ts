@@ -17,7 +17,3 @@ export {
     IPreRoomCreatePrevent,
     IPreRoomDeletePrevent,
 };
-
-export * from './IPreRoomUserJoined';
-export * from './IPostRoomUserJoined';
-export * from './IRoomUserJoinedContext';

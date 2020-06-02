@@ -1,9 +1,10 @@
 import { Expect, Test } from 'alsatian';
 import { App } from '../../../src/definition/App';
 import { AppStatus } from '../../../src/definition/AppStatus';
-import { AppInterface, IAppInfo } from '../../../src/definition/metadata';
+import { IAppInfo } from '../../../src/definition/metadata';
+
 import { AppManager } from '../../../src/server/AppManager';
-import { AppFabricationFulfillment, ICompilerError } from '../../../src/server/compiler';
+import { AppFabricationFulfillment, AppInterface, ICompilerError } from '../../../src/server/compiler';
 import { ProxiedApp } from '../../../src/server/ProxiedApp';
 import { IAppStorageItem } from '../../../src/server/storage';
 

@@ -2,8 +2,6 @@ import { IRoom, RoomType } from '../../definition/rooms';
 import { IUser } from '../../definition/users';
 import { AppManager } from '../AppManager';
 
-const PrivateManager = Symbol('RoomPrivateManager');
-
 export class Room implements IRoom {
     public id: string;
     public displayName?: string;
@@ -21,15 +19,13 @@ export class Room implements IRoom {
     public userIds?: Array<string>;
     private _USERNAMES: Array<string>;
 
-    private [PrivateManager]: AppManager;
-
     /**
      * @deprecated
      */
     public get usernames(): Array<string> {
         // Get usernames
         if (!this._USERNAMES) {
-            this._USERNAMES = this[PrivateManager].getBridges().getInternalBridge().getUsernamesOfRoomById(this.id);
+            this._USERNAMES = this.manager.getBridges().getInternalBridge().getUsernamesOfRoomById(this.id);
         }
 
         return this._USERNAMES;
@@ -39,15 +35,8 @@ export class Room implements IRoom {
         return;
     }
 
-    public constructor(room: IRoom, manager: AppManager) {
+    public constructor(room: IRoom, private manager: AppManager) {
         Object.assign(this, room);
-
-        Object.defineProperty(this, PrivateManager, {
-            configurable: false,
-            enumerable: false,
-            writable: false,
-            value: manager,
-        });
     }
 
     get value(): object {

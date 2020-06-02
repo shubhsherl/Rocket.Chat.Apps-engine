@@ -4,7 +4,6 @@ import { ILivechatRoom } from './ILivechatRoom';
 
 /**
  * Handler called after a livechat room is closed.
- * @deprecated please prefer the IPostLivechatRoomClosed event
  */
 export interface ILivechatRoomClosedHandler {
     /**
